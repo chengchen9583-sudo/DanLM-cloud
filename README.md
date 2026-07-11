@@ -5,7 +5,9 @@ A game AI that learns entirely from raw game history via self-play reinforcement
 **Disclaimer: This project was developed through ~100% vibe coding (powered by Claude Opus 4.6). While extensively tested, the code and documentation may contain critical bugs, hallucinations, or inaccuracies.** We are actively working on fixing these issues. Use at your own risk and verify critical results independently. If you encounter any problems, feel free to [open an issue](../../issues).
 
 ### Updates
-(2026-05-01) 🔥 We proposed DouLM, the DouDiZhu version of DanLM, has reached **#1** on the [Botzone FightTheLandlord leaderboard](https://en.botzone.org.cn/game/ranklist/545840890003e2b77caf768f?page=0#69e11d749e279a05639b3002), surpassing all the other 491 bots.
+**(2026-07-11) 🪐 Call for collaboration: We have noticed a profound connection between our work and the recently popular concept of world models. [Microsoft's ECHO](https://arxiv.org/pdf/2605.24517) and [PaW](https://arxiv.org/pdf/2606.02388) adopted very similar approaches, co-training NTP with RL objectives to learn an implicit on-policy world model for LLM agents. Our team is also working toward this direction to bridge the gap between world models and agentic LLMs. We already have some great ideas and are looking for collaborators to realize them. If you are interested, feel free to drop me an email.**
+
+(2026-05-01) 🔥 We proposed DouLM, the DouDiZhu version of DanLM, which has reached **#1** on the [Botzone FightTheLandlord leaderboard](https://en.botzone.org.cn/game/ranklist/545840890003e2b77caf768f?page=0#69e11d749e279a05639b3002), surpassing all the other 491 bots.
 
 (2026-04-03) 🔥 DanLM has reached **#1** on the [Botzone GuanDan leaderboard](https://en.botzone.org.cn/game/ranklist/65490c16ec1ab1389702dced), surpassing all the other 30 bots.
 
@@ -26,16 +28,16 @@ graph LR
     style q1 fill:#ffebee,stroke:#E53935
 ```
 
-### DanLM (This Work) — zero domain knowledge, learn everything from raw observations
+### DanLM (This Work) — zero domain knowledge, learn everything from raw observations with prediction
 
 ```mermaid
 graph LR
-    history["Game History<br/>(tokenized play record, raw public information only)"] --> encoder["TinyLM Encoder"]
+    history["Game History<br/>(tokenized play record, raw public information only)"] --> encoder["TinyLM Encoder<br/>(game world model)"]
     hand["Hand + Action<br/>(simple count/onehot vectors)"] --> handmlp["Hand MLP"]
 
-    encoder -->|"context"| qhead["Q-Value Head"]
-    encoder -->|"hidden states"| ntp["Next-Token Prediction<br/>(auxiliary task)"]
-    handmlp -->|"hand context"| qhead
+    encoder -->|"predictive embedding"| qhead["Q-Value Head"]
+    encoder -->ntp["Next-Token Prediction<br/>(auxiliary task)"]
+    handmlp -->|"hand state"| qhead
     qhead --> q2["Q(s,a)"]
 
     style ntp fill:#f3e5f5,stroke:#9C27B0
