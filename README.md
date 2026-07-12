@@ -1,6 +1,6 @@
-# DanLM: Tokenization Is All You Need to Master Complex Card Games
+# DanLM: Next Token Is All You Need to Master Complex Card Games
 
-A game AI that learns entirely from raw game history via self-play reinforcement learning, with **truly zero domain knowledge — no policy priors, no hand-crafted features**, what you see is what you get, surpassing hand-crafted SOTA in GuanDan (掼蛋) and DouDiZhu (斗地主), two complex multi-player trick-taking card games hugely popular across China.
+A game AI that learns entirely from self-play reinforcement learning and next-token prediction of raw game history, with **truly zero domain knowledge — no policy priors, no hand-crafted features**, what you see is what you get, surpassing hand-crafted SOTA in GuanDan (掼蛋) and DouDiZhu (斗地主), two complex multi-player trick-taking card games hugely popular across China.
 
 **Disclaimer: This project was developed through ~100% vibe coding (powered by Claude Opus 4.6). While extensively tested, the code and documentation may contain critical bugs, hallucinations, or inaccuracies.** We are actively working on fixing these issues. Use at your own risk and verify critical results independently. If you encounter any problems, feel free to [open an issue](../../issues).
 
@@ -30,7 +30,7 @@ graph LR
     style q1 fill:#ffebee,stroke:#E53935
 ```
 
-### DanLM (This Work) — zero domain knowledge, learn everything from raw observations with prediction
+### DanLM (This Work) — zero domain knowledge, learn everything from raw observations with next-token prediction
 
 ```mermaid
 graph LR
@@ -38,7 +38,7 @@ graph LR
     hand["Hand + Action<br/>(simple count/onehot vectors)"] --> handmlp["Hand MLP"]
 
     encoder -->|"predictive embedding"| qhead["Q-Value Head"]
-    encoder -->ntp["Next-Token Prediction<br/>(auxiliary task)"]
+    encoder -->ntp["Next-Token Prediction for game dynamics learning<br/>(auxiliary task)"]
     handmlp -->|"hand state"| qhead
     qhead --> q2["Q(s,a)"]
 
@@ -56,7 +56,10 @@ graph LR
 
 Existing card game AI systems (DouZero, DanZero, PerfectDou, Suphx, etc.) usually rely on **carefully designed hand-crafted features**, including too much domain knowledge like pre-calculated statistics and secondary information of the game.
 
-**DanLM shows that raw game history speaks for itself.** The input is simply the raw play-by-play game transcript — who played what cards, in order — tokenized like natural language. The model learns what matters from scratch, through self-play RL and causal sequence modeling.
+### Intuition
+Inspired by modern LLMs, **we model card play as a causal sequence-modeling problem** and leverage the powerful next-token prediction objective to learn game dynamics from raw game records.
+
+**DanLM shows that raw game history speaks for itself just by predicting the next token.** The input is simply the raw play-by-play game transcript — who played what cards, in order — tokenized like natural language. The model learns what matters from scratch, through self-play RL and causal sequence modeling.
 
 | Aspect | Previous SOTA (DanZero) | DanLM |
 |--------|------------------------|------------|
@@ -109,6 +112,14 @@ Whole-game win rate (1000 games, seed=42):
 | DanZero | - | - | 95.5% | 98.9% | 98.6% | 99.1% | 99.0% |
 | DanZero V1T | 87.5% | - | 99.1% | 99.9% | **100.0%** | **100.0%** | 99.8% |
 | **DanLM** | **97.5%** | **74.9%** | **100.0%** | **100.0%** | 99.8% | 99.9% | **99.9%** |
+
+#### NTP ablation
+
+We ablated training w/ NTP (red) and w/o NTP (orange). NTP loss helps regularize predictive representation learning and boosts the performance by a large margin.
+
+<p align="center">
+  <img src="docs/imgs/danzero_tb.png" alt="NTP_ablation" width="800">
+</p>
 
 ### Quick Start to Reproduce the Results
 
