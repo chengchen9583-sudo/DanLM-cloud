@@ -97,7 +97,7 @@ See `baselines/` for the full bots collection.
 
 Evaluation results of DanLM against DanZero, DanZero V1T, and the 5 strongest baseline bots: njupt-guandan-ai, chick-squad, guanglan-iot, egg-expert, and egg-pancake.
 
-Random single-round win rate (1000 rounds, seed=42):
+**Random single-round win rate (1000 rounds, seed=42)**:
 
 |        | DanZero | DanZero V1T | njupt-guandan-ai | chick-squad | guanglan-iot | egg-expert | egg-pancake |
 |--------|--------|--------|--------|--------|--------|--------|--------|
@@ -105,7 +105,7 @@ Random single-round win rate (1000 rounds, seed=42):
 | DanZero V1T | 62.1% | - | 77.8% | 80.8% | **81.8%** | **83.2%** | **85.9%** |
 | **DanLM** | **65.1%** | **59.6%** | **81.9%** | **82.1%** | 80.9% | 82.3% | **85.9%** |
 
-Whole-game win rate (1000 games, seed=42):
+**Whole-game win rate (1000 games, seed=42)**:
 
 |        | DanZero | DanZero V1T | njupt-guandan-ai | chick-squad | guanglan-iot | egg-expert | egg-pancake |
 |--------|--------|--------|--------|--------|--------|--------|--------|
