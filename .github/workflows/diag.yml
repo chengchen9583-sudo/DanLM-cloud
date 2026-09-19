@@ -1,0 +1,23 @@
+name: DanLM Bot Diag (macOS)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install torch numpy onnxruntime
+      - name: Diagnose bot agent
+        run: |
+          PYTHONPATH=. python scripts/diag_bot.py 2>&1 | tee diag_bot.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diag-bot
+          path: diag_bot.txt
+          if-no-files-found: error
