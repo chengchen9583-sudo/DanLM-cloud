@@ -1,0 +1,69 @@
+name: DanLM Cloud Run (macOS)
+
+# One-click remote run of DanLM evaluation on a free GitHub macOS ARM64 runner,
+# because the danzero binary extensions in this repo are macOS-only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      eval_games:
+        description: "Single-round eval games per matchup"
+        default: "100"
+        required: false
+
+jobs:
+  run:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install torch numpy onnxruntime
+
+      - name: Sanity check environment
+        run: |
+          python -c "import torch, numpy, onnxruntime; print('torch', torch.__version__, '| numpy', numpy.__version__)"
+          PYTHONPATH=. python -c "import danzero.engine.game, danzero.model.transformer, danzero.encoding.tokenizer; print('danzero binary extensions load OK')"
+
+      - name: Demo round (verbose play-by-play, DanLM vs DanZero V1T)
+        run: |
+          PYTHONPATH=. python scripts/demo_round.py \
+            --model-a ckpts/DanLM_v1/dansformer_v1_best_eval.pt \
+            --model-b ckpts/DanZero_v3_rep_v1t/v3_rep_v1t_best_eval_001_int8.onnx \
+            --games 2 --seed 42 | tee demo_round.txt
+
+      - name: Eval DanLM vs random
+        run: |
+          PYTHONPATH=. python scripts/evaluate.py \
+            --model ckpts/DanLM_v1/dansformer_v1_best_eval.pt \
+            --model-b random \
+            --games ${{ github.event.inputs.eval_games || '100' }} \
+            --log-interval 20 | tee eval_vs_random.txt
+
+      - name: Eval DanLM vs DanZero V1T (hand-crafted SOTA)
+        run: |
+          PYTHONPATH=. python scripts/evaluate.py \
+            --model ckpts/DanLM_v1/dansformer_v1_best_eval.pt \
+            --model-b ckpts/DanZero_v3_rep_v1t/v3_rep_v1t_best_eval_001_int8.onnx \
+            --games ${{ github.event.inputs.eval_games || '100' }} \
+            --log-interval 20 | tee eval_vs_v1t.txt
+
+      - name: Eval DanLM vs competition bot (njupt-guandan-ai)
+        run: |
+          PYTHONPATH=. python scripts/evaluate.py \
+            --model ckpts/DanLM_v1/dansformer_v1_best_eval.pt \
+            --model-b bot:fin-njupt-guandan-ai \
+            --games ${{ github.event.inputs.eval_games || '100' }} \
+            --log-interval 20 | tee eval_vs_bot.txt
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: danlm-results
+          path: "*.txt"
+          if-no-files-found: error
