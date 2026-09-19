@@ -1,29 +1,17 @@
-name: DanLM Cloud Eval (macOS, parallel)
+name: DanLM vs Bot Eval (macOS, fixed)
 
-# Three matchups evaluated in parallel on free GitHub macOS ARM64 runners.
-# Each job uploads its own artifact so one slow/failed matchup cannot
-# destroy the others.
+# The upstream BaselineBotAgent does not add the bot's own directory to
+# sys.path, so bot code relying on intra-package imports (e.g.
+# "from lxw.trans import ...") fails silently inside evaluate().
+# Fix: put the bot dir on PYTHONPATH ourselves (verified by diag v2).
 
 on:
   workflow_dispatch:
 
 jobs:
-  eval:
+  eval-bot:
     runs-on: macos-14
     timeout-minutes: 55
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: random
-            spec_b: random
-            games: 100
-          - name: v1t
-            spec_b: ckpts/DanZero_v3_rep_v1t/v3_rep_v1t_best_eval_001_int8.onnx
-            games: 100
-          - name: bot
-            spec_b: bot:fin-njupt-guandan-ai
-            games: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -34,17 +22,17 @@ jobs:
       - name: Install dependencies
         run: pip install torch numpy onnxruntime
 
-      - name: Evaluate DanLM vs ${{ matrix.name }} (single round, ${{ matrix.games }} games)
+      - name: Evaluate DanLM vs fin-njupt-guandan-ai (single round, 100 games)
         run: |
-          PYTHONPATH=. python scripts/evaluate.py \
+          PYTHONPATH=.:baselines/fin-njupt-guandan-ai python scripts/evaluate.py \
             --model ckpts/DanLM_v1/dansformer_v1_best_eval.pt \
-            --model-b "${{ matrix.spec_b }}" \
-            --games ${{ matrix.games }} \
-            --log-interval 10 | tee eval_vs_${{ matrix.name }}.txt
+            --model-b "bot:fin-njupt-guandan-ai" \
+            --games 100 \
+            --log-interval 10 | tee eval_vs_bot.txt
 
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
-          name: eval-vs-${{ matrix.name }}
-          path: eval_vs_${{ matrix.name }}.txt
+          name: eval-vs-bot-fixed
+          path: eval_vs_bot.txt
           if-no-files-found: error
