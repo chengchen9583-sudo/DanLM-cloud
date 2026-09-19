@@ -1,43 +1,35 @@
 #!/usr/bin/env python3
-"""Diagnose why bot agents silently fail in evaluate() on the runner."""
+"""Diag v2: does adding the bot dir to sys.path fix the silent failure?"""
 
 import sys
 import traceback
 
 sys.path.insert(0, ".")
 
-print("== 1. create_agent('bot:fin-njupt-guandan-ai') ==")
-try:
-    from danzero.eval.agents import create_agent
-
-    agent = create_agent("bot:fin-njupt-guandan-ai", "cpu")
-    print("OK:", type(agent))
-except Exception:
-    traceback.print_exc()
-
-print()
-print("== 2. play 1 game vs the bot ==")
+print("== A. without extra sys.path ==")
 try:
     from danzero.eval.agents import create_agent
     from danzero.eval.evaluator import evaluate
 
     a = create_agent("ckpts/DanLM_v1/dansformer_v1_best_eval.pt", "cpu")
     b = create_agent("bot:fin-njupt-guandan-ai", "cpu")
+    print("bot agent type:", type(b))
     res = evaluate(a, b, num_games=1, seed=7, log_interval=0)
     print("result:", res)
 except Exception:
     traceback.print_exc()
 
 print()
-print("== 3. import bot module directly ==")
+print("== B. with bot dir in sys.path ==")
 try:
-    import importlib.util
+    sys.path.insert(0, "baselines/fin-njupt-guandan-ai")
+    from danzero.eval.agents import create_agent as create_agent2
+    from danzero.eval.evaluator import evaluate as evaluate2
 
-    spec = importlib.util.spec_from_file_location(
-        "diag_bot_action", "baselines/fin-njupt-guandan-ai/action.py"
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    print("bot action.py import OK:", [n for n in dir(mod) if not n.startswith("_")][:10])
+    a2 = create_agent2("ckpts/DanLM_v1/dansformer_v1_best_eval.pt", "cpu")
+    b2 = create_agent2("bot:fin-njupt-guandan-ai", "cpu")
+    print("bot agent type:", type(b2))
+    res2 = evaluate2(a2, b2, num_games=1, seed=7, log_interval=0)
+    print("result:", res2)
 except Exception:
     traceback.print_exc()
